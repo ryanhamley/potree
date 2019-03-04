@@ -32,12 +32,12 @@
 	<script src="../build/potree/potree.js"></script>
 	<script src="../libs/plasio/js/laslaz.js"></script>
 	<script src="../libs/Cesium/Cesium.js"></script>
-	
+
 	<!-- INCLUDE ADDITIONAL DEPENDENCIES HERE -->
 	<!-- INCLUDE SETTINGS HERE -->
-	
+
 	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
-		
+
 		<div id="potree_render_area">
 			<div id="cesiumContainer" style="position: absolute; width: 100%; height: 100%; background-color:green"></div>
 		</div>
@@ -50,7 +50,7 @@
 		useDefaultRenderLoop: false,
 		animation: false,
 		baseLayerPicker : false,
-		fullscreenButton: false, 
+		fullscreenButton: false,
 		geocoder: false,
 		homeButton: false,
 		infoBox: false,
@@ -66,9 +66,9 @@
 	cesiumViewer.camera.setView({
 		destination : cp,
 		orientation: {
-			heading : 10, 
-			pitch : -Cesium.Math.PI_OVER_TWO * 0.5, 
-			roll : 0.0 
+			heading : 10,
+			pitch : -Cesium.Math.PI_OVER_TWO * 0.5,
+			roll : 0.0
 		}
 	});
 
@@ -87,25 +87,25 @@
 	$("#menu_appearance").next().show();
 	//viewer.toggleSidebar();
 	});
-	
+
 	Potree.loadPointCloud("../pointclouds/vol_total/cloud.js", "sigeom.sa", e => {
 		potreeViewer.scene.addPointCloud(e.pointcloud);
 		e.pointcloud.position.z = 0;
 		let material = e.pointcloud.material;
 		material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-		
+
 		potreeViewer.scene.view.position.set(590093.649, 231823.465, 267.402);
 		potreeViewer.scene.view.lookAt(new THREE.Vector3(589837.149, 231438.996, -0.707));
 
 		Potree.measureTimings = true;
-		
+
 
 		let pointcloudProjection = e.pointcloud.projection;
 		let mapProjection = proj4.defs("WGS84");
 
 		window.toMap = proj4(pointcloudProjection, mapProjection);
 		window.toScene = proj4(mapProjection, pointcloudProjection);
-		
+
 		{
 			let bb = potreeViewer.getBoundingBox();
 
@@ -157,7 +157,7 @@
 						up : cUp
 					}
 				});
-				
+
 			}
 
 			let aspect = potreeViewer.scene.getActiveCamera().aspect;
@@ -169,7 +169,7 @@
 				let fovx = Math.atan(Math.tan(0.5 * fovy) * aspect) * 2
 				cesiumViewer.camera.frustum.fov = fovx;
 			}
-			
+
 		}
 
 		cesiumViewer.render();

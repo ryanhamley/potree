@@ -52,7 +52,7 @@ export class Annotation extends EventDispatcher {
 
 		let iconClose = exports.resourcePath + '/icons/close.svg';
 
-		this.domElement = $(`
+		this.domElement = Utils.createHTML(`
 			<div class="annotation" oncontextmenu="return false;">
 				<div class="annotation-titlebar">
 					<span class="annotation-label"></span>
@@ -66,12 +66,13 @@ export class Annotation extends EventDispatcher {
 			</div>
 		`);
 
-		this.elTitlebar = this.domElement.find('.annotation-titlebar');
-		this.elTitle = this.elTitlebar.find('.annotation-label');
-		this.elTitle.append(this._title);
-		this.elDescription = this.domElement.find('.annotation-description');
-		this.elDescriptionClose = this.elDescription.find('.annotation-description-close');
-		// this.elDescriptionContent = this.elDescription.find(".annotation-description-content");
+		this.elTitlebar = this.domElement.querySelector('.annotation-titlebar');
+		this.elTitle = this.domElement.querySelector('.annotation-label');
+		this.elTitle.textContent = this._title;
+		this.elDescription = this.domElement.querySelector('.annotation-description');
+		this.elDescriptionClose = this.domElement.querySelector('.annotation-description-close');
+		console.log('this.elDescriptionClose', this.elDescriptionClose);
+		// this.elDescriptionContent = document.querySelector(".annotation-description-content");
 
 		this.clickTitle = () => {
 			if(this.hasView()){
@@ -98,24 +99,27 @@ export class Annotation extends EventDispatcher {
 			a => a.showIn === undefined || a.showIn.includes('scene'));
 
 		for (let action of actions) {
-			let elButton = $(`<img src="${action.icon}" class="annotation-action-icon">`);
-			this.elTitlebar.append(elButton);
-			elButton.click(() => action.onclick({annotation: this}));
+			let elButton = Utils.createHTML(`<img src="${action.icon}" class="annotation-action-icon">`);
+			this.elTitlebar.appendChild(elButton);
+			elButton.on('click', () => action.onclick({annotation: this}));
 		}
 
-		this.elDescriptionClose.hover(
-			e => this.elDescriptionClose.css('opacity', '1'),
-			e => this.elDescriptionClose.css('opacity', '0.5')
-		);
-		this.elDescriptionClose.click(e => this.setHighlighted(false));
-		// this.elDescriptionContent.html(this._description);
-
-		this.domElement.mouseenter(e => this.setHighlighted(true));
-		this.domElement.mouseleave(e => this.setHighlighted(false));
-
-		this.domElement.on('touchstart', e => {
-			this.setHighlighted(!this.isHighlighted);
-		});
+		// TODO: move these to after this.domElement is attached to the DOM
+		// console.log('this.domElement', this.domElement);
+		// this.elDescriptionClose.on('hover',
+		// 	e => this.elDescriptionClose.style.opacity = '1'
+		// );
+		// this.elDescriptionClose.on('hover',
+		// 	e => this.elDescriptionClose.style.opacity = '0.5'
+		// );
+		// this.elDescriptionClose.on('click', e => this.setHighlighted(false));
+		// // this.elDescriptionContent.html(this._description);
+		// this.domElement.on('mouseenter', e => this.setHighlighted(true));
+		// this.domElement.on('mouseleave', e => this.setHighlighted(false));
+		//
+		// this.domElement.on('touchstart', e => {
+		// 	this.setHighlighted(!this.isHighlighted);
+		// });
 
 		this.display = false;
 		//this.display = true;
@@ -127,7 +131,7 @@ export class Annotation extends EventDispatcher {
 			return;
 		}
 
-		let domElement = $(`
+		let domElement = Utils.createHTML(`
 			<div style="position: absolute; left: 300; top: 200; pointer-events: none">
 				<svg width="300" height="600">
 					<line x1="0" y1="0" x2="1200" y2="200" style="stroke: black; stroke-width:2" />
@@ -136,11 +140,11 @@ export class Annotation extends EventDispatcher {
 				</svg>
 			</div>
 		`);
-		
-		let svg = domElement.find("svg")[0];
-		let elLine = domElement.find("line")[0];
-		let elStart = domElement.find("circle")[0];
-		let elEnd = domElement.find("circle")[1];
+
+		let svg = document.querySelector("svg")[0];
+		let elLine = document.querySelector("line")[0];
+		let elStart = document.querySelectorAll("circle")[0];
+		let elEnd = document.querySelectorAll("circle")[1];
 
 		let setCoordinates = (start, end) => {
 			elStart.setAttribute("cx", `${start.x}`);
@@ -174,53 +178,53 @@ export class Annotation extends EventDispatcher {
 
 		};
 
-		$(viewer.renderArea).append(domElement);
+		viewer.renderArea.appendChild(domElement);
 
 
-		let annotationStartPos = this.position.clone();
-		let annotationStartOffset = this.offset.clone();
+		let annotationStartPos = this.position.cloneNode(true);
+		let annotationStartOffset = this.offset.cloneNode(true);
 
-		$(this.domElement).draggable({
-			start: (event, ui) => {
-				annotationStartPos = this.position.clone();
-				annotationStartOffset = this.offset.clone();
-				$(this.domElement).find(".annotation-titlebar").css("pointer-events", "none");
-
-				console.log($(this.domElement).find(".annotation-titlebar"));
-			},
-			stop: () => {
-				$(this.domElement).find(".annotation-titlebar").css("pointer-events", "");
-			},
-			drag: (event, ui ) => {
-				let renderAreaWidth = viewer.renderer.getSize().width;
-				let renderAreaHeight = viewer.renderer.getSize().height;
-
-				let diff = {
-					x: ui.originalPosition.left - ui.position.left, 
-					y: ui.originalPosition.top - ui.position.top
-				};
-
-				let nDiff = {
-					x: -(diff.x / renderAreaWidth) * 2,
-					y: (diff.y / renderAreaWidth) * 2
-				};
-
-				let camera = viewer.scene.getActiveCamera();
-				let oldScreenPos = new THREE.Vector3()
-					.addVectors(annotationStartPos, annotationStartOffset)
-					.project(camera);
-
-				let newScreenPos = oldScreenPos.clone();
-				newScreenPos.x += nDiff.x;
-				newScreenPos.y += nDiff.y;
-
-				let newPos = newScreenPos.clone();
-				newPos.unproject(camera);
-
-				let newOffset = new THREE.Vector3().subVectors(newPos, this.position);
-				this.offset.copy(newOffset);
-			}
-		});
+		// this.domElement.draggable({
+		// 	start: (event, ui) => {
+		// 		annotationStartPos = this.position.cloneNode(true);
+		// 		annotationStartOffset = this.offset.cloneNode(true);
+		// 		document.querySelector(".annotation-titlebar").style.pointerEvents = 'none';
+		//
+		// 		console.log(document.querySelector(".annotation-titlebar"));
+		// 	},
+		// 	stop: () => {
+		// 		document.querySelector(".annotation-titlebar").style.pointerEvents = '';
+		// 	},
+		// 	drag: (event, ui ) => {
+		// 		let renderAreaWidth = viewer.renderer.getSize().width;
+		// 		let renderAreaHeight = viewer.renderer.getSize().height;
+		//
+		// 		let diff = {
+		// 			x: ui.originalPosition.left - ui.position.left,
+		// 			y: ui.originalPosition.top - ui.position.top
+		// 		};
+		//
+		// 		let nDiff = {
+		// 			x: -(diff.x / renderAreaWidth) * 2,
+		// 			y: (diff.y / renderAreaWidth) * 2
+		// 		};
+		//
+		// 		let camera = viewer.scene.getActiveCamera();
+		// 		let oldScreenPos = new THREE.Vector3()
+		// 			.addVectors(annotationStartPos, annotationStartOffset)
+		// 			.project(camera);
+		//
+		// 		let newScreenPos = oldScreenPos.cloneNode(true);
+		// 		newScreenPos.x += nDiff.x;
+		// 		newScreenPos.y += nDiff.y;
+		//
+		// 		let newPos = newScreenPos.cloneNode(true);
+		// 		newPos.unproject(camera);
+		//
+		// 		let newOffset = new THREE.Vector3().subVectors(newPos, this.position);
+		// 		this.offset.copy(newOffset);
+		// 	}
+		// });
 
 		let updateCallback = () => {
 			let position = this.position;
@@ -229,7 +233,7 @@ export class Annotation extends EventDispatcher {
 			let renderAreaWidth = viewer.renderer.getSize().width;
 			let renderAreaHeight = viewer.renderer.getSize().height;
 
-			let start = this.position.clone();
+			let start = this.position.cloneNode(true);
 			let end = new THREE.Vector3().addVectors(this.position, this.offset);
 
 			let toScreen = (position) => {
@@ -248,7 +252,7 @@ export class Annotation extends EventDispatcher {
 
 				return screenPos;
 			};
-			
+
 			start = toScreen(start);
 			end = toScreen(end);
 
@@ -259,9 +263,9 @@ export class Annotation extends EventDispatcher {
 		viewer.addEventListener("update", updateCallback);
 
 		this.handles = {
-			domElement: domElement,
-			setCoordinates: setCoordinates,
-			updateCallback: updateCallback
+			domElement,
+			setCoordinates,
+			updateCallback
 		};
 	}
 
@@ -271,7 +275,7 @@ export class Annotation extends EventDispatcher {
 		}
 
 		//$(viewer.renderArea).remove(this.handles.domElement);
-		this.handles.domElement.remove();
+		this.handles.domElement.parentNode.removeChild(this.handles.domElement);
 		viewer.removeEventListener("update", this.handles.updateCallback);
 
 		delete this.handles;
@@ -311,10 +315,10 @@ export class Annotation extends EventDispatcher {
 
 		if (display) {
 			// this.domElement.fadeIn(200);
-			this.domElement.show();
+			this.domElement.style.display = '';
 		} else {
 			// this.domElement.fadeOut(200);
-			this.domElement.hide();
+			this.domElement.style.display = 'none';
 		}
 	}
 
@@ -349,8 +353,8 @@ export class Annotation extends EventDispatcher {
 		}
 
 		this._title = title;
-		this.elTitle.empty();
-		this.elTitle.append(this._title);
+		this.elTitle.innerHTML = '';
+		this.elTitle.appendChild(this._title);
 	}
 
 	get description () {
@@ -365,8 +369,8 @@ export class Annotation extends EventDispatcher {
 		this._description = description;
 
 		const elDescriptionContent = this.elDescription.find(".annotation-description-content");
-		elDescriptionContent.empty();
-		elDescriptionContent.append(this._description);
+		elDescriptionContent.innerHTML = '';
+		elDescriptionContent.appendChild(this._description);
 	}
 
 	add (annotation) {
@@ -477,21 +481,21 @@ export class Annotation extends EventDispatcher {
 
 	setHighlighted (highlighted) {
 		if (highlighted) {
-			this.domElement.css('opacity', '0.8');
-			this.elTitlebar.css('box-shadow', '0 0 5px #fff');
-			this.domElement.css('z-index', '1000');
+			this.domElement.style.opacity = '0.8';
+			this.elTitlebar.style.boxShadow = '0 0 5px #fff';
+			this.domElement.style.zIndex = '1000';
 
 			if (this._description) {
 				this.descriptionVisible = true;
 				this.elDescription.fadeIn(200);
-				this.elDescription.css('position', 'relative');
+				this.elDescription.style.position = 'relative';
 			}
 		} else {
-			this.domElement.css('opacity', '0.5');
-			this.elTitlebar.css('box-shadow', '');
-			this.domElement.css('z-index', '100');
+			this.domElement.style.opacity = '0.5';
+			this.elTitlebar.style.boxShadow = '';
+			this.domElement.style.zIndex = '100';
 			this.descriptionVisible = false;
-			this.elDescription.css('display', 'none');
+			this.elDescription.style.display = 'none';
 		}
 
 		this.isHighlighted = highlighted;
@@ -541,7 +545,7 @@ export class Annotation extends EventDispatcher {
 			//	let camTargetDistance = camera.position.distanceTo(endTarget);
 			//	let target = new THREE.Vector3().addVectors(
 			//		camera.position,
-			//		camera.getWorldDirection().clone().multiplyScalar(camTargetDistance)
+			//		camera.getWorldDirection().cloneNode(true).multiplyScalar(camTargetDistance)
 			//	);
 			//	let tween = new TWEEN.Tween(target).to(endTarget, animationDuration);
 			//	tween.easing(easing);
@@ -558,7 +562,7 @@ export class Annotation extends EventDispatcher {
 			//}
 		} else if (this.radius) {
 			let direction = view.direction;
-			let endPosition = endTarget.clone().add(direction.multiplyScalar(-this.radius));
+			let endPosition = endTarget.cloneNode(true).add(direction.multiplyScalar(-this.radius));
 			let startRadius = view.radius;
 			let endRadius = this.radius;
 
